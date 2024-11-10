@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
-url = "https://f-1world.ru/kubok-konstruktorov/5922-turnirnaja-tablica-kubka-konstruktorov-2024-goda.html"
+url = "https://f-1world.ru/turnirnaja-tablica/5921-formula-1-turnirnaja-tablica-pilotov-sezon-2024-goda.html"
 
 page = requests.get(url)
 
@@ -15,20 +15,22 @@ rows = table.find_all('tr')[1:]
 teams_data = []
 
 for row in rows:
-    team_name = row.find_all('td')[1].text.strip()
-    wins = row.find_all('td')[2].text.strip()
-    pl = row.find_all('td')[3].text.strip()
-    lk = row.find_all('td')[4].text.strip()
-    points = row.find_all('td')[5].text.strip()
+    name = row.find_all('td')[1].text.strip()
+    team = row.find_all('td')[2].text.strip()
+    wins = row.find_all('td')[3].text.strip()
+    pl = row.find_all('td')[4].text.strip()
+    lk = row.find_all('td')[5].text.strip()
+    points = row.find_all('td')[6].text.strip()
     teams_data.append({
-        'Команда': team_name,
-        'Поб': wins,
+        'Имя': name,
+        'Название команды': team,
+        'ПОБ': wins,
         'ПЛ': pl,
         'ЛК': lk,
         'Очки': points
     })
 
-with open('teams.json', 'w', encoding='utf-8') as json_file:
+with open('table.json', 'w', encoding='utf-8') as json_file:
     json.dump(teams_data, json_file, ensure_ascii=False, indent=4)
 
-print("Данные успешно записаны в файл teams.json")
+print("Данные успешно записаны в файл tablepilots.json")
