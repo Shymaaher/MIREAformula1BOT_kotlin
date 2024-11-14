@@ -14,12 +14,32 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 import java.io.File
 
 data class QuizQuestion(val question: String, val answers: List<String>, val correctAnswerIndex: Int)
-
+/**
+ * Бот для Telegram, реализующий функционал викторины, отправки календаря Формулы 1,
+ * турнирных таблиц, информации о командах и трассах.
+ */
 class SimpleBot : TelegramLongPollingBot() {
+    /**
+     * Возвращает имя бота.
+     * @return Имя бота.
+     */
     override fun getBotUsername(): String = "Formula1CalendarBot"
+    /**
+     * Возвращает токен бота.
+     * @return Токен бота.
+     */
     override fun getBotToken(): String = "7584499973:AAFL0Vl2qtHlTLr0EUe6dk98WJ2JbGIzi54"
-
+    /**
+     * Класс, представляющий вопрос викторины.
+     *
+     * @property question Вопрос викторины.
+     * @property answers Список вариантов ответов на вопрос.
+     * @property correctAnswerIndex Индекс правильного ответа в списке вариантов.
+     */
     private val quizQuestions = listOf(
+        /**
+         * Список вопросов викторины.
+         */
         QuizQuestion("Кто выиграл чемпионат мира Формулы 1 в 2020 году?", listOf("Льюис Хэмилтон", "Валттери Боттас", "Макс Ферстаппен", "Себастьян Феттель"), 0),
         QuizQuestion("Какой автомобиль был первым в истории Формулы 1?", listOf("Mercedes W196", "Ferrari 125 F1", "Lotus 49", "McLaren MP4/4"), 1),
         QuizQuestion("Какой гонщик имеет наибольшее количество побед в Формуле 1?", listOf("Льюис Хэмилтон", "Михаэль Шумахер", "Ален Прост", "Себастьян Феттель"), 0),
@@ -33,7 +53,11 @@ class SimpleBot : TelegramLongPollingBot() {
     )
     private var currentQuestionIndex = -1
     private val userAnswers = mutableMapOf<Long, MutableList<Int>>()
-
+    /**
+     * Обрабатывает обновления, полученные от пользователей.
+     *
+     * @param update Обновление, содержащее информацию о сообщении или обратном вызове.
+     */
     override fun onUpdateReceived(update: Update?) {
         if (update != null && update.hasMessage() && update.message.hasText()) {
             val messageText = update.message.text
@@ -66,12 +90,20 @@ class SimpleBot : TelegramLongPollingBot() {
         }
     }
 
-
+    /**
+     * Отправляет турнирную таблицу пилотов.
+     *
+     * @param chatId Идентификатор чата, куда будет отправлено сообщение.
+     */
     private fun sendPilotsStandings(chatId: Long) {
         val response = getPilotsStandings()
         sendResponse(chatId, response, showMainButtons())
     }
-
+    /**
+     * Загружает турнирную таблицу пилотов из файла JSON.
+     *
+     * @return Строка с турнирной таблицей пилотов.
+     */
     private fun getPilotsStandings(): String {
         return try {
             val jsonString = File("table.json").readText(Charsets.UTF_8)
@@ -99,13 +131,21 @@ class SimpleBot : TelegramLongPollingBot() {
         }
     }
 
-
+    /**
+     * Начинает викторину.
+     *
+     * @param chatId Идентификатор чата, в котором начинается викторина.
+     */
     private fun startQuiz(chatId: Long) {
         currentQuestionIndex = 0
         userAnswers[chatId] = mutableListOf()
         sendQuestion(chatId)
     }
-
+    /**
+     * Завершает викторину и отображает результаты.
+     *
+     * @param chatId Идентификатор чата, в котором завершена викторина.
+     */
     private fun endQuiz(chatId: Long) {
         if (currentQuestionIndex != -1) {
             sendResponse(chatId, "Викторина завершена!", showMainButtons())
@@ -115,6 +155,11 @@ class SimpleBot : TelegramLongPollingBot() {
             sendResponse(chatId, "Викторина еще не началась.", showMainButtons()) // Если викторина не начата
         }
     }
+    /**
+     * Отправляет следующий вопрос викторины.
+     *
+     * @param chatId Идентификатор чата, в котором будет отправлен следующий вопрос.
+     */
     private fun sendQuestion(chatId: Long) {
         if (currentQuestionIndex < quizQuestions.size) {
             val question = quizQuestions[currentQuestionIndex]
@@ -134,13 +179,18 @@ class SimpleBot : TelegramLongPollingBot() {
             sendResults(chatId)
         }
     }
-
+    /**
+     * Обрабатывает выбор ответа пользователя.
+     *
+     * @param chatId Идентификатор чата, в котором пользователь выбрал ответ.
+     * @param answerIndex Индекс выбранного ответа.
+     */
     private fun handleAnswer(chatId: Long, answerIndex: Int) {
         userAnswers[chatId]?.add(answerIndex)
         currentQuestionIndex++
         sendQuestion(chatId)
     }
-
+    // Методы для отправки сообщений и изображений
     private fun sendResults(chatId: Long) {
         val answers = userAnswers[chatId] ?: return
         val correctAnswersCount = answers.withIndex().count { (index, answer) ->
@@ -149,7 +199,13 @@ class SimpleBot : TelegramLongPollingBot() {
         val resultMessage = "Ваши результаты:\nВы ответили на ${answers.size} вопросов.\nПравильных ответов: $correctAnswersCount из ${quizQuestions.size}."
         sendResponse(chatId, resultMessage, showMainButtons())
     }
-
+    /**
+     * Отправляет сообщение с клавиатурой.
+     *
+     * @param chatId Идентификатор чата.
+     * @param response Текст сообщения.
+     * @param keyboard Клавиатура для ответа.
+     */
     private fun sendResponse(chatId: Long, response: String, replyMarkup: ReplyKeyboardMarkup?) {
         val message = SendMessage().apply {
             this.chatId = chatId.toString()
@@ -177,13 +233,25 @@ class SimpleBot : TelegramLongPollingBot() {
             else -> Pair("Неизвестная команда", "")
         }
     }
-
+    /**
+     * Отправляет фото о машине.
+     *
+     * @param chatId Идентификатор чата.
+     * @param imageUrl URL изображения.
+     */
     private fun sendCarPhoto(chatId: Long, imageUrl: String) {
         if (imageUrl.isBlank()) return
         val sendPhoto = SendPhoto(chatId.toString(), InputFile(imageUrl)).apply { caption = "Фотография автомобиля команды" }
         try { execute(sendPhoto) } catch (e: TelegramApiException) { e.printStackTrace() }
     }
-
+    /**
+     * Создает клавиатуру для выбора команды Формулы 1.
+     * Клавиатура содержит кнопки для разных команд и одну кнопку для возвращения в главное меню.
+     *
+     * @return Объект [ReplyKeyboardMarkup], представляющий клавиатуру с кнопками команд.
+     *         Каждая кнопка представляет собой команду Формулы 1, а последняя кнопка
+     *         позволяет вернуться в главное меню.
+     */
     private fun showCarsButtons(): ReplyKeyboardMarkup {
         val keyboardMarkup = ReplyKeyboardMarkup().apply { resizeKeyboard = true }
         val buttons = ArrayList<KeyboardRow>()
@@ -214,7 +282,11 @@ class SimpleBot : TelegramLongPollingBot() {
         keyboardMarkup.keyboard = buttons
         return keyboardMarkup
     }
-
+    /**
+     * Показывает основные кнопки меню.
+     *
+     * @return Клавиатура с основными кнопками.
+     */
     private fun showMainButtons(): ReplyKeyboardMarkup {
         val keyboardMarkup = ReplyKeyboardMarkup().apply { resizeKeyboard = true }
         val buttons = ArrayList<KeyboardRow>()
@@ -237,6 +309,12 @@ class SimpleBot : TelegramLongPollingBot() {
         keyboardMarkup.keyboard = buttons
         return keyboardMarkup
     }
+    /**
+     * Отправляет инлайн-кнопки для выбора трассы.
+     * Кнопки содержат список трасс Формулы 1, каждая кнопка при нажатии возвращает название трассы.
+     *
+     * @param chatId Идентификатор чата, в который будет отправлено сообщение с кнопками.
+     */
     private fun sendTrackButtons(chatId: Long) {
         val inlineKeyboardMarkup = InlineKeyboardMarkup()
 
@@ -284,7 +362,12 @@ class SimpleBot : TelegramLongPollingBot() {
         try { execute(message) } catch (e: TelegramApiException) { e.printStackTrace() }
     }
 
-
+    /**
+     * Получает текущие результаты Кубка конструкторов Формулы 1 из файла и возвращает строку с информацией о командах.
+     * Каждая команда представлена с количеством побед, поул-позиций, лучших кругов и очков.
+     *
+     * @return Строка с турнирной таблицей Кубка конструкторов или сообщение об ошибке, если данные не могут быть загружены.
+     */
     private fun getConstructorsStandings(): String {
         return try {
             val jsonString = File("teams.json").readText(Charsets.UTF_8)
@@ -310,7 +393,12 @@ class SimpleBot : TelegramLongPollingBot() {
             "Не удалось загрузить таблицу"
         }
     }
-
+    /**
+     * Отправляет изображение календаря Формулы 1 на 2024 год в чат.
+     * Если изображение не может быть загружено, отправляется сообщение об ошибке.
+     *
+     * @param chatId Идентификатор чата, в который будет отправлено изображение.
+     */
     private fun sendCalendarImage(chatId: Long) {
         val imageUrl = "https://f-1world.ru/posters/f1-2024-calendar.webp"
         if (imageUrl.isNotBlank()) {
