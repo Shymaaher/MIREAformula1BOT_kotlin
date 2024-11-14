@@ -10,40 +10,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import org.telegram.telegrambots.meta.TelegramBotsApi
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
-import org.telegram.telegrambots.meta.api.objects.InputFile
-import org.telegram.telegrambots.meta.api.objects.Update
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 import java.io.File
-import java.lang.StringBuilder
-import java.util.ArrayList
-import kotlin.Exception
-import kotlin.Pair
-import kotlin.apply
-import kotlin.collections.chunked
-import kotlin.collections.count
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapIndexed
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.set
-import kotlin.collections.toMutableList
-import kotlin.collections.withIndex
-import kotlin.io.println
-import kotlin.io.readText
-import kotlin.jvm.java
-import kotlin.ranges.until
-import kotlin.text.Charsets
-import kotlin.text.isBlank
-import kotlin.text.isNotBlank
-import kotlin.text.toInt
 
 data class QuizQuestion(val question: String, val answers: List<String>, val correctAnswerIndex: Int)
 
@@ -76,8 +44,15 @@ class SimpleBot : TelegramLongPollingBot() {
                 "Турнирная таблица Кубка конструкторов" -> sendResponse(chatId, getConstructorsStandings(), showMainButtons())
                 "Информация о машинах 2024" -> sendResponse(chatId, "Выберите команду:", showCarsButtons())
                 "Турнирная таблица пилотов" -> sendPilotsStandings(chatId)
+                "Трассы" -> sendTrackButtons(chatId)
                 "Викторина" -> startQuiz(chatId)
-                "Завершить викторину" -> endQuiz(chatId)
+                "Завершить викторину" -> {
+                    if (currentQuestionIndex != -1) {
+                        endQuiz(chatId)
+                    } else {
+                        sendResponse(chatId, "Викторина еще не началась.", showMainButtons())
+                    }
+                }
                 else -> {
                     val (response, imageUrl) = processCommand(messageText)
                     sendResponse(chatId, response, showMainButtons())
@@ -132,11 +107,14 @@ class SimpleBot : TelegramLongPollingBot() {
     }
 
     private fun endQuiz(chatId: Long) {
-        sendResponse(chatId, "Викторина завершена!", showMainButtons())
-        currentQuestionIndex = -1
-        userAnswers.remove(chatId)
+        if (currentQuestionIndex != -1) {
+            sendResponse(chatId, "Викторина завершена!", showMainButtons())
+            currentQuestionIndex = -1
+            userAnswers.remove(chatId)
+        } else {
+            sendResponse(chatId, "Викторина еще не началась.", showMainButtons()) // Если викторина не начата
+        }
     }
-
     private fun sendQuestion(chatId: Long) {
         if (currentQuestionIndex < quizQuestions.size) {
             val question = quizQuestions[currentQuestionIndex]
