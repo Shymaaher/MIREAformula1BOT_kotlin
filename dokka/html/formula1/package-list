@@ -1,0 +1,16 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:////PointingToDeclaration/formula1/[root]/index.html
+$dokka.location://main/#/PointingToDeclaration/formula1/[root]/main.html
+$dokka.location:/QuizQuestion///PointingToDeclaration/formula1/[root]/-quiz-question/index.html
+$dokka.location:/QuizQuestion/QuizQuestion/#kotlin.String#kotlin.collections.List[kotlin.String]#kotlin.Int/PointingToDeclaration/formula1/[root]/-quiz-question/-quiz-question.html
+$dokka.location:/QuizQuestion/answers/#/PointingToDeclaration/formula1/[root]/-quiz-question/answers.html
+$dokka.location:/QuizQuestion/correctAnswerIndex/#/PointingToDeclaration/formula1/[root]/-quiz-question/correct-answer-index.html
+$dokka.location:/QuizQuestion/question/#/PointingToDeclaration/formula1/[root]/-quiz-question/question.html
+$dokka.location:/SimpleBot///PointingToDeclaration/formula1/[root]/-simple-bot/index.html
+$dokka.location:/SimpleBot/SimpleBot/#/PointingToDeclaration/formula1/[root]/-simple-bot/-simple-bot.html
+$dokka.location:/SimpleBot/getBotToken/#/PointingToDeclaration/formula1/[root]/-simple-bot/get-bot-token.html
+$dokka.location:/SimpleBot/getBotUsername/#/PointingToDeclaration/formula1/[root]/-simple-bot/get-bot-username.html
+$dokka.location:/SimpleBot/onUpdateReceived/#org.telegram.telegrambots.meta.api.objects.Update?/PointingToDeclaration/formula1/[root]/-simple-bot/on-update-received.html
+
+
