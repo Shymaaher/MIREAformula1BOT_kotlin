@@ -10,8 +10,40 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import org.telegram.telegrambots.meta.TelegramBotsApi
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
+import org.telegram.telegrambots.meta.api.objects.InputFile
+import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 import java.io.File
+import java.lang.StringBuilder
+import java.util.ArrayList
+import kotlin.Exception
+import kotlin.Pair
+import kotlin.apply
+import kotlin.collections.chunked
+import kotlin.collections.count
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mapIndexed
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
+import kotlin.collections.set
+import kotlin.collections.toMutableList
+import kotlin.collections.withIndex
+import kotlin.io.println
+import kotlin.io.readText
+import kotlin.jvm.java
+import kotlin.ranges.until
+import kotlin.text.Charsets
+import kotlin.text.isBlank
+import kotlin.text.isNotBlank
+import kotlin.text.toInt
 
 data class QuizQuestion(val question: String, val answers: List<String>, val correctAnswerIndex: Int)
 
@@ -35,30 +67,30 @@ class SimpleBot : TelegramLongPollingBot() {
     private val userAnswers = mutableMapOf<Long, MutableList<Int>>()
 
     override fun onUpdateReceived(update: Update?) {
-        if (update != null) {
-            val chatId = update.message?.chatId ?: update.callbackQuery?.message?.chatId
-            if (chatId != null) {
-                if (update.hasMessage() && update.message.hasText()) {
-                    val messageText = update.message.text
+        if (update != null && update.hasMessage() && update.message.hasText()) {
+            val messageText = update.message.text
+            val chatId = update.message.chatId
 
-                    when (messageText) {
-                        "Трассы" -> sendTrackButtons(chatId)
-                        "Календарь" -> sendCalendarImage(chatId)
-                        "Турнирная таблица пилотов" -> sendPilotsStandings(chatId)
-                        else -> {
-                            val (response, imageUrl) = processCommand(messageText)
-                            sendResponse(chatId, response, showMainButtons())
-                            if (imageUrl.isNotBlank()) sendCarPhoto(chatId, imageUrl)
-                        }
-                    }
-                } else if (update.hasCallbackQuery()) {
-                    val callbackData = update.callbackQuery.data
-                    val chatId = update.callbackQuery.message.chatId
-                    sendResponse(chatId, "Вы выбрали трассу: $callbackData", showMainButtons())
+            when (messageText) {
+                "Календарь" -> sendCalendarImage(chatId)
+                "Турнирная таблица Кубка конструкторов" -> sendResponse(chatId, getConstructorsStandings(), showMainButtons())
+                "Информация о машинах 2024" -> sendResponse(chatId, "Выберите команду:", showCarsButtons())
+                "Турнирная таблица пилотов" -> sendPilotsStandings(chatId)
+                "Викторина" -> startQuiz(chatId)
+                "Завершить викторину" -> endQuiz(chatId)
+                else -> {
+                    val (response, imageUrl) = processCommand(messageText)
+                    sendResponse(chatId, response, showMainButtons())
+                    if (imageUrl.isNotBlank()) sendCarPhoto(chatId, imageUrl)
                 }
             }
+        } else if (update != null && update.hasCallbackQuery()) {
+            val callbackData = update.callbackQuery.data
+            val chatId = update.callbackQuery.message.chatId
+            handleAnswer(chatId, callbackData.toInt())
         }
     }
+
 
     private fun sendPilotsStandings(chatId: Long) {
         val response = getPilotsStandings()
@@ -76,7 +108,7 @@ class SimpleBot : TelegramLongPollingBot() {
             for (i in 0 until teamsArray.length()) {
                 val team = teamsArray.getJSONObject(i)
                 standings.append(
-                    "Имя Фамилия:  ${team.getString("Имя")}, " +
+                    "Команда:  ${team.getString("Имя")}, " +
                             "Поб: ${team.getString("Название команды")}, " +
                             "ПЛ: ${team.getString("ПОБ")}, " +
                             "ЛК: ${team.getString("ПЛ")}, " +
