@@ -407,7 +407,7 @@ class SimpleBot : TelegramLongPollingBot() {
         } else {
             sendResponse(chatId, "Ошибка загрузки календаря", showMainButtons())
         }
-    }
+    }          
 }
 
 fun main() {
